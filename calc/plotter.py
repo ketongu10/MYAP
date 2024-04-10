@@ -3,15 +3,26 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib import animation
 
-fig = plt.figure()
-data = np.random.rand(10, 10)
-sns.heatmap(data, vmax=.8, square=True)
+
+
+
+
+
 
 def init():
       sns.heatmap(np.zeros((10, 10)), vmax=.8, square=True, cbar=False)
 
-def animate(i):
-    data = np.random.rand(10, 10)
-    sns.heatmap(data, vmax=.8, square=True, cbar=False)
+def animate(i, F, dt):
+    print(f"Plotting {i} frame")
+    data = np.sum(F[i*dt], axis=(2,3)).swapaxes(0, 1)
+    plot = sns.heatmap(data, square=True, cbar=False)
+    plot.invert_yaxis()
 
-anim = animation.FuncAnimation(fig, animate, init_func=init, frames=20, repeat = False)
+
+
+def render_animation(F, dt=1):
+    fig, ax = plt.subplots()
+
+    anim = animation.FuncAnimation(fig, animate,fargs=(F,dt), frames=len(F)//dt, repeat=False)
+    anim.save("../plots/3.gif", writer="ffmpeg", fps=20)
+
