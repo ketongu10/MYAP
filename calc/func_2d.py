@@ -68,18 +68,18 @@ def reflect(left, right, up, down, F, N_x, N_y, Vx, Vy):
 
 
     # right
-    for y in range(1, N_y-1):
+    for y in range(0, N_y):
         exp_dist = maxwell(Vx[:vx_pos], right[y])
         exp_f = np.abs(Vx[:vx_pos]).dot(exp_dist)
         h_t = np.tensordot(Vx[vx_pos:], (F[-1, y, vx_pos:, :]), ([0], [0])) / exp_f
-        F[-1, y, :vx_pos, :] = np.kron(h_t, exp_dist).reshape(vx_pos, n_vy)
+        F[-1, y, :vx_pos, :] = np.kron(exp_dist, h_t).reshape(vx_pos, n_vy)
 
     # left
-    for y in range(1, N_y-1):
+    for y in range(0, N_y):
         exp_dist = maxwell(Vx[vx_pos:], left[y])
         exp_f = np.abs(Vx[vx_pos:]).dot(exp_dist)
         h_t = np.tensordot(np.abs(Vx[:vx_pos]), (F[0, y, :vx_pos, :]), ([0], [0])) / exp_f
-        F[0, y, vx_pos:, :] = np.kron(h_t, exp_dist).reshape(vx_pos, n_vy)
+        F[0, y, vx_pos:, :] = np.kron(exp_dist, h_t).reshape(vx_pos, n_vy)
 
     return F
 

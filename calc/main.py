@@ -16,13 +16,13 @@ def set_maxwell(f, V, T):
             f[:,:,i, j] = maxwell(np.sqrt(vx*vx+vy*vy), T)
     return f
 
-SIM_TIME = 1000
+SIM_TIME = 400
 
 N_x ,  N_y = 100, 100
 N_v = 8
 
 T1 = 1
-T2 = 2
+T2 = 1
 
 dx = dy = 1
 dze_1 = np.sqrt(T2)
@@ -31,12 +31,12 @@ dt = dx / dze_cut/2.1
 V = np.linspace(-dze_cut, dze_cut, N_v)
 assert 0 not in V
 print(V, V[1]*dt/dx)
-F = np.zeros((N_x, N_y, N_v, N_v), dtype=np.float32)
+F = np.zeros((N_x, N_y, N_v, N_v), dtype=np.float64)
 #F = set_maxwell(F, V, T1)
-F[50,50,0,7] = 1 #pointed gas moves up and right
+F[50,50,7,7] = 1 #pointed gas moves up and right
 F/=F.sum()
 
-left = right = up = down = np.array([T1 for i in range(N_x)], dtype=np.float32)
+left = right = up = down = np.array([T1 for i in range(N_x)], dtype=np.float64)
 def start_2d(F, V, dx, dy, dt):
     START_TIME = time()
     saved_F = [F]
@@ -46,7 +46,6 @@ def start_2d(F, V, dx, dy, dt):
         F = reflect(left, right, up, down, F, N_x, N_y, V ,V)
         if t % 10 ==0:
             saved_F.append(F.copy())
-       # print(np.where(F > 0.2), F[1,1,1,1])
     print(f"TIME = {time() - START_TIME} s, {time() - t1}")
     render_animation(saved_F, dt = 1)
 
