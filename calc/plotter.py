@@ -12,8 +12,7 @@ def save_slide(F, name):
     plot.invert_yaxis()
 
 
-def init(F, dt, ax1, max):
-      sns.heatmap(np.zeros((100, 100)), vmax=max, square=True, cbar=True)
+
 
 def animate(i, F, dt, ax, max):
     print(f"Plotting {i} frame")
@@ -22,22 +21,117 @@ def animate(i, F, dt, ax, max):
     plot = sns.heatmap(data, square=True,vmax=max, cbar=False)
     plot.invert_yaxis()
 
-def animate_with_T(i, F,T, dt, ax1, ax2, max):
+
+inited = False
+def animate_with_T(i, F,T, dt, ax1, ax2, max_f, max_t):
+    global inited
+    x, y = F[i].shape[0:2]
     print(f"Plotting {i} frame")
     ax1.cla()
     ax2.cla()
     data = np.sum(F[i*dt], axis=(2,3)).swapaxes(0, 1)
-    plotF = sns.heatmap(data, square=True, vmax=max, cbar=False, ax=ax1)
+    ax1.title.set_text(f"f={np.sum(data):.2f}")
+    ax2.title.set_text(f"T={np.sum(T[i][0])/x/y:.2f}")
+    plotF = sns.heatmap(data, square=True,  cbar=(not inited), ax=ax1) #vmax=max_f, vmin=max_f*0.5,
     plotF.invert_yaxis()
-    plotT = sns.heatmap(T[i][0], square=True, vmax=max, cbar=False, ax=ax2)
+
+    plotT = sns.heatmap(T[i][0], square=True, cbar=(not inited), ax=ax2) #
     plotT.invert_yaxis()
 
-def render_animation(F, dt=1, temp=None, vmax=1):
+    if not inited:
+        inited = True
+
+
+def animate_grads(i, F,T, dt, ax1,ax2, max_f, max_t):
+
+    print(f"Plotting {i} grad")
+
+    ax1.cla()
+    ax2.cla()
+
+    ax1.title.set_text(f"grad(f)")
+    ax2.title.set_text(f"grad(T)")
+    data = np.sum(F[i * dt], axis=(2, 3)).swapaxes(0, 1)
+    gr_f = np.gradient(data)
+
+    plotF = ax1.quiver(gr_f[1], gr_f[0], data, cmap='inferno')
+    #ax1.invert_yaxis()
+    plotT = ax2.quiver(T[i][1][1], T[i][1][0], T[i][0], cmap='inferno')
+    #ax2.invert_yaxis()
+
+inited = False
+def animate_all(i, F,T, dt, axs, max_f, max_t):
+    global inited
+    x, y = F[i].shape[0:2]
+    print(f"Plotting {i} frame")
+    for ax in axs:
+        ax.cla()
+    data = np.sum(F[i*dt], axis=(2,3)).swapaxes(0, 1)
+    axs[0].title.set_text(f"f={np.sum(data):.2f}")
+    axs[1].title.set_text(f"T={np.sum(T[i][0])/x/y:.2f}")
+    axs[2].title.set_text(f"grad(f)")
+    axs[3].title.set_text(f"grad(T)")
+
+    plotF = sns.heatmap(data, square=True,  cbar=(not inited), ax=axs[0]) #vmax=max_f, vmin=max_f*0.5,
+    plotF.invert_yaxis()
+
+    plotT = sns.heatmap(T[i][0], square=True, cbar=(not inited), ax=axs[1]) #
+    plotT.invert_yaxis()
+
+    gr_f = np.gradient(data)
+
+    gradF = axs[2].quiver(gr_f[1], gr_f[0], data, cmap='inferno')
+    gradT = axs[3].quiver(T[i][1][1], T[i][1][0], T[i][0], cmap='inferno')
+
+
+    if not inited:
+        inited = True
+
+def animate_hydro(i, F, H, dt, ax1, ax2, max_f, max_t):
+
+    print(f"Plotting {i} grad")
+
+    ax1.cla()
+    ax2.cla()
+
+    ax1.title.set_text(f"grad(f)")
+    ax2.title.set_text(f"grad(T)")
+    data = np.sum(F[i * dt], axis=(2, 3)).swapaxes(0, 1)
+    gr_f = np.gradient(data)
+
+    plotF = ax1.quiver(gr_f[1], gr_f[0], data, cmap='inferno')
+    plotT = ax2.quiver(H[i][0], H[i][1], cmap='inferno')
+
+def render_animation(F, dt=1, temp=None, max_f=1, max_t=1):
     if temp:
         fig, (ax1, ax2) = plt.subplots(ncols=2)
-        anim = animation.FuncAnimation(fig, animate_with_T, fargs=(F, temp, dt, ax1, ax2, vmax), frames=len(F)//dt, repeat=False)
+        anim = animation.FuncAnimation(fig, animate_with_T, fargs=(F, temp, dt, ax1, ax2, max_f, max_t), frames=len(F)//dt, repeat=False)
     else:
         fig, ax1 = plt.subplots()
-        anim = animation.FuncAnimation(fig, animate,init_func=init, fargs=(F, dt, ax1, vmax), frames=len(F)//dt, repeat=False)
-    anim.save("../plots/temp.gif", writer="ffmpeg")
+        anim = animation.FuncAnimation(fig, animate, fargs=(F, dt, ax1, max_f), frames=len(F)//dt, repeat=False)
+    anim.save("../plots/tempru.gif", writer="ffmpeg")
 
+
+def render_grads_animation(F, dt=1, temp=None, max_f=1, max_t=1):
+
+    fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(18,9))
+    anim = animation.FuncAnimation(fig, animate_grads, fargs=(F, temp, dt, ax1, ax2, max_f, max_t), frames=len(F)//dt, repeat=False)
+    anim.save("../plots/temp_gradru.gif", writer="ffmpeg")
+
+
+def render_hydro_animation(F, dt=1, hydro=None, max_f=1, max_h=1):
+
+    fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(18,9))
+    anim = animation.FuncAnimation(fig, animate_hydro, fargs=(F, hydro, dt, ax1, ax2, max_f, max_h), frames=len(F)//dt, repeat=False)
+    anim.save("../plots/temp_hydroru.gif", writer="ffmpeg")
+
+def render_animation_all(F, dt=1, temp=None, max_f=1, max_t=1):
+    if temp:
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(ncols=2, nrows=2, figsize=(8, 8))
+        axs = (ax1, ax2, ax3, ax4)
+        print(axs)
+        anim = animation.FuncAnimation(fig, animate_all, fargs=(F, temp, dt, axs, max_f, max_t), frames=len(F)//dt, repeat=False)
+    else:
+        fig, ax1 = plt.subplots()
+        anim = animation.FuncAnimation(fig, animate, fargs=(F, dt, ax1, max_f), frames=len(F)//dt, repeat=False)
+    anim.save("../plots/all_flow.gif", writer="ffmpeg")

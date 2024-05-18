@@ -1,8 +1,15 @@
+import matplotlib.pyplot as plt
 import numpy as np
 
+X, Y = np.meshgrid(np.arange(0, 2 * np.pi, .2), np.arange(0, 2 * np.pi, .2))
+print(X.shape, Y.shape)
+print(X)
+U = np.cos(X)
+V = np.sin(Y)
+print(U.shape)
+fig1, ax1 = plt.subplots()
+ax1.set_title('Arrows scale with plot width, not view')
+Q = ax1.quiver(X, Y, U, V, units='width')
+qk = ax1.quiverkey(Q, 0.9, 0.9, 2, r'$2 \frac{m}{s}$', labelpos='E',coordinates='figure')
 
-a = np.array([1, 2, 3, 4], dtype=np.float32)
-b = np.array([1, 2], dtype=np.float32)
-#c = np.zeros(shape=(2, 2, 2,2), dtype=np.float32)
-
-print(np.kron(a, b))
+plt.show()
