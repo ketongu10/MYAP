@@ -134,4 +134,4 @@ def render_animation_all(F, dt=1, temp=None, max_f=1, max_t=1):
     else:
         fig, ax1 = plt.subplots()
         anim = animation.FuncAnimation(fig, animate, fargs=(F, dt, ax1, max_f), frames=len(F)//dt, repeat=False)
-    anim.save("../plots/all_flow.gif", writer="ffmpeg")
+    anim.save("../plots/last100.gif", writer="ffmpeg")

@@ -1,15 +1,17 @@
-import matplotlib.pyplot as plt
-import numpy as np
-
-X, Y = np.meshgrid(np.arange(0, 2 * np.pi, .2), np.arange(0, 2 * np.pi, .2))
-print(X.shape, Y.shape)
-print(X)
-U = np.cos(X)
-V = np.sin(Y)
-print(U.shape)
-fig1, ax1 = plt.subplots()
-ax1.set_title('Arrows scale with plot width, not view')
-Q = ax1.quiver(X, Y, U, V, units='width')
-qk = ax1.quiverkey(Q, 0.9, 0.9, 2, r'$2 \frac{m}{s}$', labelpos='E',coordinates='figure')
-
-plt.show()
+from functools import partial
+from itertools import repeat
+from multiprocessing import Pool, freeze_support
+def func(a, b):
+    return a + b
+def main():
+    a_args = [1,2,3]
+    second_arg = 1
+    with Pool() as pool:
+        L = pool.starmap(func, [(1, 1), (2, 1), (3, 1)])
+        M = pool.starmap(func, zip(a_args, repeat(second_arg)))
+        N = pool.map(partial(func, b=second_arg), a_args)
+        assert L == M == N
+    print(L)
+if __name__=="__main__":
+    freeze_support()
+    main()

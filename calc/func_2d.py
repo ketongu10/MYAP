@@ -10,7 +10,7 @@ def maxwell(x, T):
 def maxwell_with_flow(x, v, T):
     return np.exp(-(x-v) * (x-v) / 2 / T)
 
-def solve_angle_np(F: np.ndarray, Vx, Vy, dx, dy, dt, Coll_integral):
+def solve_angle_np(F: np.ndarray, Vx, Vy, dx, dy, dt):
     vx_pos = int(len(Vx) / 2)
     vy_pos = int(len(Vy) / 2)
 
@@ -19,8 +19,7 @@ def solve_angle_np(F: np.ndarray, Vx, Vy, dx, dy, dt, Coll_integral):
         for vy in range(vy_pos, len(Vy)):
             F[:,:,vx, vy] = F[:,:,vx, vy] * (1 - Vx[vx] / dx * dt - Vy[vy] / dy * dt) + \
                             np.roll(F[:,:,vx, vy], 1, 0) * (Vx[vx] / dx * dt) + \
-                            np.roll(F[:,:,vx, vy], 1, 1) * (Vy[vy] / dy * dt) + \
-                            Coll_integral[:,:,vx, vy] * dt
+                            np.roll(F[:,:,vx, vy], 1, 1) * (Vy[vy] / dy * dt)
 
     # +-
 
@@ -28,22 +27,19 @@ def solve_angle_np(F: np.ndarray, Vx, Vy, dx, dy, dt, Coll_integral):
         for vy in range(vy_pos):
             F[:, :, vx, vy] = F[:, :, vx, vy] * (1 - Vx[vx] / dx * dt + Vy[vy] / dy * dt) + \
                               np.roll(F[:, :, vx, vy], 1, 0) * (Vx[vx] / dx * dt) - \
-                              np.roll(F[:, :, vx, vy], -1, 1) * (Vy[vy] / dy * dt) + \
-                              Coll_integral[:,:,vx, vy] * dt
+                              np.roll(F[:, :, vx, vy], -1, 1) * (Vy[vy] / dy * dt)
     # -+
     for vx in range(vx_pos):
         for vy in range(vy_pos, len(Vy)):
             F[:, :, vx, vy] = F[:, :, vx, vy] * (1 + Vx[vx] / dx * dt - Vy[vy] / dy * dt) - \
                               np.roll(F[:, :, vx, vy], -1, 0) * (Vx[vx] / dx * dt) + \
-                              np.roll(F[:, :, vx, vy], 1, 1) * (Vy[vy] / dy * dt) + \
-                              Coll_integral[:,:,vx, vy] * dt
+                              np.roll(F[:, :, vx, vy], 1, 1) * (Vy[vy] / dy * dt)
     # --
     for vx in range(vx_pos):
         for vy in range(vy_pos):
             F[:,:,vx, vy] = F[:,:,vx, vy] * (1 + Vx[vx] / dx * dt + Vy[vy] / dy * dt) - \
                             np.roll(F[:,:,vx, vy], -1, 0) * (Vx[vx] / dx * dt) - \
-                            np.roll(F[:,:,vx, vy], -1, 1) * (Vy[vy] / dy * dt) + \
-                            Coll_integral[:,:,vx, vy] * dt
+                            np.roll(F[:,:,vx, vy], -1, 1) * (Vy[vy] / dy * dt)
 
     return F
 

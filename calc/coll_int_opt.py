@@ -4,6 +4,9 @@ from time import time
 from init_distributions import set_maxwell
 from multiprocessing import Pool
 
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 
 #@njit(cache=True)
 def shind(ind, mid):
@@ -14,8 +17,8 @@ def shind(ind, mid):
 #@njit(cache=True)
 def calc_coll_integral(F: np.ndarray, V: np.array, float_type):
     #ARGS
-    bs = [-0.1, 0.1]
-    db = 1
+    bs = [-0.1, -0.03333333, 0.03333333,  0.1]
+    db = 0.025
     dv = V[-1]-V[-2]
     V_sph = 4*V[-1]*V[-1] #???
     v_max = len(V)-1
@@ -104,14 +107,6 @@ def calc_out_velocities(v, v1, b_, dv=1):
     v_, v1_ = v+_S.dot(_v), v+_S.dot(_v1)
 
 
-
-    #print(f"beta={beta}")
-    #print(f"S={_S}")
-    #print(f"cos, sin= {ca, sa}")
-    #print(f"_v, _v1 = {_v, _v1}")
-    #print(f"v_, v1_ = {v_, v1_}")
-    #print(f"ASSERT VELOCITY: {(v+v1)} =?= {(v_+v1_)}")
-    #print(f"ASSERT ENERGY: {(v.dot(v)+v1.dot(v1))} =?= {(v_.dot(v_)+v1_.dot(v1_))}")
     return v_, v1_
 
 
@@ -122,14 +117,26 @@ if __name__ == '__main__':
     dze_cut = 1
     N_v = 16
     V = np.linspace(-dze_cut, dze_cut, N_v)
-    N_x = N_y = 100
+    N_x = N_y = 1
     float_type = np.float64
     F = np.zeros((N_x, N_y, N_v, N_v), dtype=float_type)
-    F = set_maxwell(F, V, 1)
+    #F = set_maxwell(F, V, 1)
     #F[0, 0, 4:8, 4:6] = 1
+    F[0, 0, :,:] = 1
+    F[:, :, 8,8] = 10
 
+    F[:,:, 7,7] = 10
+    print(F)
     F/=F.sum()
     t0 = time()
-    print(calc_coll_integral(F, V, float_type))
+    INT = calc_coll_integral(F, V, float_type)
+    print(INT)
     print(f"TIME= {time()-t0}")
+
+    plot = sns.heatmap(INT[0, 0], square=True, cbar=True)
+
+    plot.invert_yaxis()
+    plt.show()
+
+    print(calc_out_velocities(np.array([V[8], V[8]]), np.array([V[7], V[7]]), -0.5))
 
