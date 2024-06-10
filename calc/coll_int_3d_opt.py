@@ -3,9 +3,12 @@ from numba import njit
 from time import time
 from init_distributions import set_maxwell
 from multiprocessing import Pool
+from plotter import render_animation_all, animate_relax
 
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib import animation
+import os
 
 
 #@njit(cache=True)
@@ -125,27 +128,36 @@ def CALC_COLL_INT(F, N_integral, buffered_mesh, space_shape, dt, is_test=False, 
         I = F
         dtau = dt
     actual_N = new_N if use_all_mesh else N_integral
+    tasks = []
+    for x in range(N_x):
+        for y in range(N_y):
+            tasks.append([F, I, actual_N, buffered_mesh, dtau, x, y])
 
-    tasks = [(F, I, actual_N, buffered_mesh, dtau, x, y) for x in range(N_x) for y in range(N_y)]
+
     with Pool(1) as p:
-        G = p.starmap(calc_coll_int, tasks)
-    print(G)
-    print(I==F)
-    if is_test:
-        return np.array(G).reshape(F.shape)
+        ret = p.starmap(calc_coll_int, tasks)
+    for i, (_,_,_,_,_, x, y) in enumerate(tasks):
+        I[x,y] = ret[i][x,y]
+    # for x in range(N_x):
+    #     for y in range(N_y):
+    #         calc_coll_int(F, I, actual_N, buffered_mesh, dtau, x, y)
+    return I
 
 def calc_coll_int(F, I, actual_N, buffered_mesh, dtau, x, y):
     V_input, V_input_indexes_base, V_fit, r_energy_koef, new_N = buffered_mesh
+
     input_samples = np.random.randint(0, new_N, size=actual_N)  # [i for i in range(new_N)] #
 
     for sample in input_samples:
         r = r_energy_koef[sample]
         C = 1 * np.linalg.norm(V_input[sample, :2] - V_input[sample, 2:4]) * dtau
-        Omega = F[x, y, V_fit[sample, 0], V_fit[sample, 1]] * F[x, y, V_fit[sample, 4], V_fit[sample, 5]] * \
+        divider = F[x, y, V_fit[sample, 0], V_fit[sample, 1]] * F[x, y, V_fit[sample, 4], V_fit[sample, 5]]
+        if divider == 0:
+            continue
+        Omega = divider * \
                 np.power(
                     (F[x, y, V_fit[sample, 2], V_fit[sample, 3]] * F[x, y, V_fit[sample, 6], V_fit[sample, 7]] /
-                     (F[x, y, V_fit[sample, 0], V_fit[sample, 1]] * F[
-                         x, y, V_fit[sample, 4], V_fit[sample, 5]])), r) - \
+                     (divider)), r) - \
                 F[x, y, V_input_indexes_base[sample, 0], V_input_indexes_base[sample, 1]] * \
                 F[x, y, V_input_indexes_base[sample, 2], V_input_indexes_base[sample, 3]]
 
@@ -158,6 +170,7 @@ def calc_coll_int(F, I, actual_N, buffered_mesh, dtau, x, y):
     return I
 
 
+
 if __name__ == '__main__':
     print("COLLISION INTEGRAL TESTS STARTED")
 
@@ -166,35 +179,48 @@ if __name__ == '__main__':
 
     t0 = time()
 
-    N_integral=50000
+    N_integral=1000
     dt = 1
 
 
-    N_x = N_y = 1
-    N_v_base = 4
+    N_x = N_y = 16
+    N_v_base = 8
     N_b = 4
     v_cut = 1
     b_max = np.pi/4
     float_type = np.float32
 
     F = np.zeros((N_x, N_y, N_v_base, N_v_base), dtype=float_type)
-    F[...] = 1 #np.random.rand(N_x, N_y, N_v_base, N_v_base)
-    F[...,:3, :3] = 2
+    F[...] = np.random.rand(N_x, N_y, N_v_base, N_v_base)
+    #F[...,6:, 6:] = 2
     F/=F.sum()
+    max_f = np.max(F)
     print(F)
 
     buffered_mesh = prepare_collision_mesh(N_b, b_max, N_v_base, v_cut, float_type)
-    CALC_COLL_INT(F, N_integral, buffered_mesh, (N_x, N_y), dt, is_test=False, use_all_mesh=True)
-    print(F)
+    #CALC_COLL_INT(F, N_integral, buffered_mesh, (N_x, N_y), dt, is_test=False, use_all_mesh=True)
+    #print(F)
 
 
 
     print(f"CALC={time()-t0}")
-    plot = sns.heatmap(F[0, 0], square=True, cbar=True)
+    # plot = sns.heatmap(F[0, 0], square=True, cbar=True)
+    #
+    # plot.invert_yaxis()
+    # plt.savefig("../plots/loh_ebaniy.png")
+    # plt.show()
 
-    plot.invert_yaxis()
-    plt.savefig("../plots/loh_ebaniy.png")
-    plt.show()
+    Fs = []
+    t0 = time()
+    for i in range(100):
+        CALC_COLL_INT(F, N_integral, buffered_mesh, (N_x, N_y), dt, is_test=False, use_all_mesh=True)
+        plt.cla()
+        plot = sns.heatmap(F[0,3], square=True, cbar=False)
+        plot.invert_yaxis()
+        plt.savefig(f"../plots/loh_ebaniy{i}.png")
+        print(F.sum())
+
+    print(f"TIME={time()-t0}")
 
 
 

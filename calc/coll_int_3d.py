@@ -128,16 +128,19 @@ def CALC_COLL_INT(F, N_integral, buffered_mesh, space_shape, dt, is_test=False, 
 
     for x in range(N_x):
         for y in range(N_y):
+
             input_samples = np.random.randint(0, new_N, size=actual_N)  # [i for i in range(new_N)] #
 
             for sample in input_samples:
                 r = r_energy_koef[sample]
-                C = 1 * np.linalg.norm(V_input[sample, :2] - V_input[sample, 2:4]) * dtau*10
-                Omega = F[x, y, V_fit[sample, 0], V_fit[sample, 1]] * F[x, y, V_fit[sample, 4], V_fit[sample, 5]] * \
+                C = 1 * np.linalg.norm(V_input[sample, :2] - V_input[sample, 2:4]) * dtau*100
+                divider = F[x, y, V_fit[sample, 0], V_fit[sample, 1]] * F[x, y, V_fit[sample, 4], V_fit[sample, 5]]
+                if divider == 0:
+                    continue
+                Omega = divider * \
                         np.power(
                             (F[x, y, V_fit[sample, 2], V_fit[sample, 3]] * F[x, y, V_fit[sample, 6], V_fit[sample, 7]] /
-                             (F[x, y, V_fit[sample, 0], V_fit[sample, 1]] * F[
-                                 x, y, V_fit[sample, 4], V_fit[sample, 5]])), r) - \
+                             (divider)), r) - \
                         F[x, y, V_input_indexes_base[sample, 0], V_input_indexes_base[sample, 1]] * \
                         F[x, y, V_input_indexes_base[sample, 2], V_input_indexes_base[sample, 3]]
 

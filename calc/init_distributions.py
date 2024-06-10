@@ -1,5 +1,5 @@
 import numpy as np
-from func_2d import maxwell
+from func_2d import maxwell, maxwell_start
 
 def set_1(f_x: np.array):
     n = len(f_x)

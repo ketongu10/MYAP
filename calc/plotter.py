@@ -2,7 +2,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib import animation
-
+import os
 
 
 
@@ -18,6 +18,14 @@ def animate(i, F, dt, ax, max):
     print(f"Plotting {i} frame")
     ax.cla()
     data = np.sum(F[i*dt], axis=(2,3)).swapaxes(0, 1)
+    plot = sns.heatmap(data, square=True,vmax=max, cbar=False)
+    plot.invert_yaxis()
+
+def animate_relax(i, F, dt, ax, max):
+    print(f"Plotting {i} frame")
+    ax.cla()
+    data = F[i] #.swapaxes(0, 1)
+    print(data)
     plot = sns.heatmap(data, square=True,vmax=max, cbar=False)
     plot.invert_yaxis()
 
@@ -125,13 +133,37 @@ def render_hydro_animation(F, dt=1, hydro=None, max_f=1, max_h=1):
     anim = animation.FuncAnimation(fig, animate_hydro, fargs=(F, hydro, dt, ax1, ax2, max_f, max_h), frames=len(F)//dt, repeat=False)
     anim.save("../plots/temp_hydroru.gif", writer="ffmpeg")
 
-def render_animation_all(F, dt=1, temp=None, max_f=1, max_t=1):
+def render_animation_all(F, dt=1, temp=None, max_f=1, max_t=1, filename="last"):
     if temp:
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(ncols=2, nrows=2, figsize=(8, 8))
         axs = (ax1, ax2, ax3, ax4)
         print(axs)
         anim = animation.FuncAnimation(fig, animate_all, fargs=(F, temp, dt, axs, max_f, max_t), frames=len(F)//dt, repeat=False)
+        anim.save(f"../plots/{filename}/anim.gif", writer="ffmpeg")
+        fig.savefig(f"../plots/{filename}/last_frame.png")
     else:
         fig, ax1 = plt.subplots()
         anim = animation.FuncAnimation(fig, animate, fargs=(F, dt, ax1, max_f), frames=len(F)//dt, repeat=False)
-    anim.save("../plots/last100.gif", writer="ffmpeg")
+        anim.save(f"../plots/{filename}.gif", writer="ffmpeg")
+        fig.savefig(f"../plots/{filename}.png")
+
+
+def plot_dQ(dQs, filename):
+    print(dQs)
+    fig, ax = plt.subplots()
+    ax.cla()
+    ax.plot(dQs)
+    fig.savefig(f"../plots/{filename}/dQ.png")
+
+if __name__ == "__main__":
+    dQs = []
+
+
+    for dir in os.listdir("../plots"):
+        dQs = np.load(os.path.join("../plots", dir, "dQ.npy"))
+        plt.plot(dQs, label=dir)
+    plt.title("Уносимое тепло")
+    plt.xlabel("time, steps")
+    plt.ylabel("Q")
+    plt.legend()
+    plt.show()
