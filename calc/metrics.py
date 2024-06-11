@@ -9,6 +9,12 @@ def temperature(F, VV, chip):
     T[x_start:x_start+w_chip, 0:h_chip] = 0
     T = T.swapaxes(0, 1)
     gradT = np.gradient(T)
+    gradT[0][0:h_chip,x_start-1:x_start+w_chip+1] = 0
+    gradT[1][0:h_chip,x_start-1:x_start+w_chip+1] = 0
+
+    gradT[0][h_chip,x_start:x_start+w_chip] = 0
+    gradT[1][h_chip,x_start:x_start+w_chip] = 0
+    #print(gradT[0][x_start, h_chip], gradT[1][x_start, h_chip])
 
     return T, gradT
 
@@ -28,11 +34,11 @@ def dQ_on_chip(F, hydroV, VV, chip):
     h_chip, w_chip, x_start = chip
     q = 0
     for x in range(x_start-1, x_start+w_chip+1):
-        q += (F[x, h_chip+1]*VV).sum()*np.linalg.norm([hydroV[0][x, h_chip+1], hydroV[1][x, h_chip+1]])
+        q += (F[x, h_chip+2]*VV).sum()*np.linalg.norm([hydroV[0][h_chip+2,x], hydroV[1][h_chip+2,x]])
 
     for y in range(0, h_chip):
-        q += (F[x_start-1, y]*VV).sum()*np.linalg.norm([hydroV[0][x_start-1, y], hydroV[1][x_start-1, y]])
-        q += (F[x_start+w_chip+1, y]*VV).sum()*np.linalg.norm([hydroV[0][x_start-1, y], hydroV[1][x_start-1, y]])
+        q += (F[x_start-2, y]*VV).sum()*np.linalg.norm([hydroV[0][y,x_start-2], hydroV[1][y,x_start-2]])
+        q += (F[x_start+w_chip+2, y]*VV).sum()*np.linalg.norm([hydroV[0][y,x_start+w_chip+2], hydroV[1][y,x_start+w_chip+2]])
     return q
 
 

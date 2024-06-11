@@ -8,10 +8,11 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-#@njit(cache=True)
+
 def shind(ind, mid):
     i = int(ind)
     return (i+mid, i+mid-1) if ind<0 else (i+mid-1, i+mid)
+
 
 def calc_out_velocities(input_data, v_cut):
     v, v1, b_ = input_data[:2], input_data[2:4], input_data[4]
@@ -101,7 +102,7 @@ def prepare_collision_mesh(N_b, b_max, N_v_base, v_cut, float_type):
     #     V_out[ind] = calc_out_velocities(prepared)
     new_N = 0
     for ind, prepared in enumerate(V_input):
-        v_out = calc_out_velocities(prepared, 1)
+        v_out = calc_out_velocities(prepared, v_cut)
         if v_out is not None:
             fitted = fit_to_base_mesh(dV_base, v_mean, v_max, v_out, V_input[ind], V_base)
             if fitted is not None:
@@ -113,8 +114,9 @@ def prepare_collision_mesh(N_b, b_max, N_v_base, v_cut, float_type):
                     V_input_indexes_base[new_N] = V_input_indexes_base[ind]
                     new_N+=1
 
-    return V_input, V_input_indexes_base, V_fit, r_energy_koef, new_N
+    return V_input[:new_N], V_input_indexes_base[:new_N], V_fit[:new_N], r_energy_koef[:new_N], new_N
 
+@njit
 def CALC_COLL_INT(F, N_integral, buffered_mesh, space_shape, dt, is_test=False, use_all_mesh=False):
     V_input, V_input_indexes_base, V_fit, r_energy_koef, new_N = buffered_mesh
     N_x, N_y = space_shape
@@ -133,7 +135,7 @@ def CALC_COLL_INT(F, N_integral, buffered_mesh, space_shape, dt, is_test=False, 
 
             for sample in input_samples:
                 r = r_energy_koef[sample]
-                C = 1 * np.linalg.norm(V_input[sample, :2] - V_input[sample, 2:4]) * dtau*100
+                C = 1 * np.linalg.norm(V_input[sample, :2] - V_input[sample, 2:4]) * dtau/actual_N*56*1000
                 divider = F[x, y, V_fit[sample, 0], V_fit[sample, 1]] * F[x, y, V_fit[sample, 4], V_fit[sample, 5]]
                 if divider == 0:
                     continue
@@ -168,9 +170,9 @@ if __name__ == '__main__':
 
 
     N_x = N_y = 1
-    N_v_base = 4
+    N_v_base = 8
     N_b = 4
-    v_cut = 1
+    v_cut = 4.8
     b_max = np.pi/4
     float_type = np.float32
 
@@ -181,13 +183,13 @@ if __name__ == '__main__':
     print(F)
 
     buffered_mesh = prepare_collision_mesh(N_b, b_max, N_v_base, v_cut, float_type)
-    CALC_COLL_INT(F, N_integral, buffered_mesh, (N_x, N_y), dt, is_test=False, use_all_mesh=True)
+    I = CALC_COLL_INT(F, N_integral, buffered_mesh, (N_x, N_y), dt, is_test=True, use_all_mesh=True)
     print(F)
 
 
 
     print(f"CALC={time()-t0}")
-    plot = sns.heatmap(F[0, 0], square=True, cbar=True)
+    plot = sns.heatmap(I[0, 0], square=True, cbar=True)
 
     plot.invert_yaxis()
     plt.savefig("../plots/loh_ebaniy.png")

@@ -68,7 +68,7 @@ def animate_grads(i, F,T, dt, ax1,ax2, max_f, max_t):
     #ax2.invert_yaxis()
 
 inited = False
-def animate_all(i, F,T, dt, axs, max_f, max_t):
+def animate_all(i, F,T, dt, axs, max_f, max_t, chip=None):
     global inited
     x, y = F[i].shape[0:2]
     print(f"Plotting {i} frame")
@@ -87,6 +87,13 @@ def animate_all(i, F,T, dt, axs, max_f, max_t):
     plotT.invert_yaxis()
 
     gr_f = np.gradient(data)
+    if chip is not None:
+        h_chip, w_chip, x_start = chip
+        gr_f[0][0:h_chip, x_start - 1:x_start + w_chip + 1] = 0
+        gr_f[1][0:h_chip, x_start - 1:x_start + w_chip + 1] = 0
+
+        gr_f[0][h_chip, x_start:x_start + w_chip] = 0
+        gr_f[1][h_chip, x_start:x_start + w_chip] = 0
 
     gradF = axs[2].quiver(gr_f[1], gr_f[0], data, cmap='inferno')
     gradT = axs[3].quiver(T[i][1][1], T[i][1][0], T[i][0], cmap='inferno')
@@ -133,12 +140,12 @@ def render_hydro_animation(F, dt=1, hydro=None, max_f=1, max_h=1):
     anim = animation.FuncAnimation(fig, animate_hydro, fargs=(F, hydro, dt, ax1, ax2, max_f, max_h), frames=len(F)//dt, repeat=False)
     anim.save("../plots/temp_hydroru.gif", writer="ffmpeg")
 
-def render_animation_all(F, dt=1, temp=None, max_f=1, max_t=1, filename="last"):
+def render_animation_all(F, dt=1, temp=None, max_f=1, max_t=1, filename="last", chip=None):
     if temp:
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(ncols=2, nrows=2, figsize=(8, 8))
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(ncols=2, nrows=2, figsize=(32, 16))
         axs = (ax1, ax2, ax3, ax4)
         print(axs)
-        anim = animation.FuncAnimation(fig, animate_all, fargs=(F, temp, dt, axs, max_f, max_t), frames=len(F)//dt, repeat=False)
+        anim = animation.FuncAnimation(fig, animate_all, fargs=(F, temp, dt, axs, max_f, max_t, chip), frames=len(F)//dt, repeat=False)
         anim.save(f"../plots/{filename}/anim.gif", writer="ffmpeg")
         fig.savefig(f"../plots/{filename}/last_frame.png")
     else:
@@ -159,9 +166,13 @@ if __name__ == "__main__":
     dQs = []
 
 
-    for dir in os.listdir("../plots"):
-        dQs = np.load(os.path.join("../plots", dir, "dQ.npy"))
-        plt.plot(dQs, label=dir)
+    for dir in os.listdir("../plots/for_otchet"):
+        if "nv=4" not in dir:
+            print(dir)
+            dQs.append(np.load(os.path.join("../plots/for_otchet", dir, "dQ.npy")))
+    #dQs[0] -= dQs[1]
+    #print(dQs)
+            plt.plot(dQs[-1], label=dir)
     plt.title("Уносимое тепло")
     plt.xlabel("time, steps")
     plt.ylabel("Q")

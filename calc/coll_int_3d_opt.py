@@ -104,7 +104,7 @@ def prepare_collision_mesh(N_b, b_max, N_v_base, v_cut, float_type):
     #     V_out[ind] = calc_out_velocities(prepared)
     new_N = 0
     for ind, prepared in enumerate(V_input):
-        v_out = calc_out_velocities(prepared, 1)
+        v_out = calc_out_velocities(prepared, v_cut)
         if v_out is not None:
             fitted = fit_to_base_mesh(dV_base, v_mean, v_max, v_out, V_input[ind], V_base)
             if fitted is not None:
@@ -116,7 +116,8 @@ def prepare_collision_mesh(N_b, b_max, N_v_base, v_cut, float_type):
                     V_input_indexes_base[new_N] = V_input_indexes_base[ind]
                     new_N+=1
 
-    return V_input, V_input_indexes_base, V_fit, r_energy_koef, new_N
+    return V_input[:new_N], V_input_indexes_base[:new_N], V_fit[:new_N], r_energy_koef[:new_N], new_N
+
 
 def CALC_COLL_INT(F, N_integral, buffered_mesh, space_shape, dt, is_test=False, use_all_mesh=False):
     V_input, V_input_indexes_base, V_fit, r_energy_koef, new_N = buffered_mesh
@@ -129,44 +130,47 @@ def CALC_COLL_INT(F, N_integral, buffered_mesh, space_shape, dt, is_test=False, 
         dtau = dt
     actual_N = new_N if use_all_mesh else N_integral
     tasks = []
+    print([a.shape for a in buffered_mesh[:-1]])
     for x in range(N_x):
         for y in range(N_y):
-            tasks.append([F, I, actual_N, buffered_mesh, dtau, x, y])
+            tasks.append([F[x,y], actual_N, buffered_mesh, dtau, x, y])
 
 
-    with Pool(1) as p:
+    with Pool(3) as p:
         ret = p.starmap(calc_coll_int, tasks)
-    for i, (_,_,_,_,_, x, y) in enumerate(tasks):
-        I[x,y] = ret[i][x,y]
+    for i, (_,_,_,_, x, y) in enumerate(tasks):
+        I[x,y] = ret[i]
     # for x in range(N_x):
     #     for y in range(N_y):
     #         calc_coll_int(F, I, actual_N, buffered_mesh, dtau, x, y)
     return I
 
-def calc_coll_int(F, I, actual_N, buffered_mesh, dtau, x, y):
-    V_input, V_input_indexes_base, V_fit, r_energy_koef, new_N = buffered_mesh
 
+@njit
+def calc_coll_int(F, actual_N, buffered_mesh, dtau, x, y):
+    V_input, V_input_indexes_base, V_fit, r_energy_koef, new_N = buffered_mesh
+    I = F.copy()
     input_samples = np.random.randint(0, new_N, size=actual_N)  # [i for i in range(new_N)] #
 
     for sample in input_samples:
         r = r_energy_koef[sample]
         C = 1 * np.linalg.norm(V_input[sample, :2] - V_input[sample, 2:4]) * dtau
-        divider = F[x, y, V_fit[sample, 0], V_fit[sample, 1]] * F[x, y, V_fit[sample, 4], V_fit[sample, 5]]
+        divider = F[V_fit[sample, 0], V_fit[sample, 1]] * F[V_fit[sample, 4], V_fit[sample, 5]]
         if divider == 0:
             continue
         Omega = divider * \
                 np.power(
-                    (F[x, y, V_fit[sample, 2], V_fit[sample, 3]] * F[x, y, V_fit[sample, 6], V_fit[sample, 7]] /
+                    (F[V_fit[sample, 2], V_fit[sample, 3]] * F[V_fit[sample, 6], V_fit[sample, 7]] /
                      (divider)), r) - \
-                F[x, y, V_input_indexes_base[sample, 0], V_input_indexes_base[sample, 1]] * \
-                F[x, y, V_input_indexes_base[sample, 2], V_input_indexes_base[sample, 3]]
+                F[V_input_indexes_base[sample, 0], V_input_indexes_base[sample, 1]] * \
+                F[V_input_indexes_base[sample, 2], V_input_indexes_base[sample, 3]]
 
-        I[x, y, V_input_indexes_base[sample, 0], V_input_indexes_base[sample, 1]] += C * Omega
-        I[x, y, V_input_indexes_base[sample, 2], V_input_indexes_base[sample, 3]] += C * Omega
-        I[x, y, V_fit[sample, 2], V_fit[sample, 3]] -= C * Omega * r
-        I[x, y, V_fit[sample, 6], V_fit[sample, 7]] -= C * Omega * r
-        I[x, y, V_fit[sample, 0], V_fit[sample, 1]] -= C * Omega * (1 - r)
-        I[x, y, V_fit[sample, 4], V_fit[sample, 5]] -= C * Omega * (1 - r)
+        I[V_input_indexes_base[sample, 0], V_input_indexes_base[sample, 1]] += C * Omega
+        I[V_input_indexes_base[sample, 2], V_input_indexes_base[sample, 3]] += C * Omega
+        I[V_fit[sample, 2], V_fit[sample, 3]] -= C * Omega * r
+        I[V_fit[sample, 6], V_fit[sample, 7]] -= C * Omega * r
+        I[V_fit[sample, 0], V_fit[sample, 1]] -= C * Omega * (1 - r)
+        I[V_fit[sample, 4], V_fit[sample, 5]] -= C * Omega * (1 - r)
     return I
 
 
