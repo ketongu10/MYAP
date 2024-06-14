@@ -172,25 +172,37 @@ def plot_dQ(dQs, filename):
     ax.plot(dQs)
     fig.savefig(f"../plots/{filename}/dQ.png")
 
+def plot_f(Fs, filename):
+
+    fig, ax = plt.subplots()
+    ax.cla()
+    ax.plot(np.array(Fs).sum(axis=(1,2,3,4)))
+    ax.set_xlabel("time, steps")
+    ax.set_ylabel("f")
+    ax.set_title("Выход f на плато")
+    fig.savefig(f"../plots/{filename}/f.png")
+
 if __name__ == "__main__":
     dQs = []
 
 
-    for dir in os.listdir("../plots/NEW_T"):
-        if "T=1.5" in dir:
-            print(dir)
-            dQs.append(np.load(os.path.join("../plots/NEW_T", dir, "dQ.npy")))
-    #dQs[0] -= dQs[1]
-    #print(dQs)
-            patternT = r"_T=([0-9.]+)"
-            patternu = r"_u=([0-9.]+)"
-            match_T = re.search(patternT, dir)
-            match_u = re.search(patternu, dir)
-            plt.plot(dQs[-1], label=f"T={float(match_T.group(1))}  u={float(match_u.group(1))}")
-    plt.title("Уносимое тепло от скорости потока")
-    plt.xlabel("time, steps")
-    plt.ylabel("Q")
-    plt.legend()
-    plt.savefig("../plots/last.png")
-    plt.show()
+    # for dir in os.listdir("../plots/wk"):
+    #     if "T=1.5" in dir or True:
+    #         print(dir)
+    #         dQs.append(np.load(os.path.join("../plots/wk", dir, "dQ.npy")))
+    # #dQs[0] -= dQs[1]
+    # #print(dQs)
+    #         patternT = r"_T=([0-9.]+)"
+    #         patternu = r"_u=([0-9.]+)"
+    #         match_T = re.search(patternT, dir)
+    #         match_u = re.search(patternu, dir)
+    #         plt.plot(dQs[-1], label=f"T={float(match_T.group(1))}  u={float(match_u.group(1))}")
+    # plt.title("Уносимое тепло от скорости потока")
+    # plt.xlabel("time, steps")
+    # plt.ylabel("Q")
+    # plt.legend()
+    # plt.savefig("../plots/last.png")
+    # plt.show()
 
+    f = np.load("/home/popovpe/Desktop/dp/program/plots/time=10000_nv=8_nx=100_ny=50_T=1.5_u=0.01_njit_full_goodQ/F.npy")
+    plot_f(f[1:], filename="f_relax")

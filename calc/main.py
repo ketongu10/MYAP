@@ -19,19 +19,19 @@ def create_shit_dir(name):
         shutil.rmtree(f"../plots/{name}")
         os.mkdir(f"../plots/{name}")
 
-SIM_TIME = 5000
+SIM_TIME = 10000
 sim_step = SIM_TIME//100
 float_type = np.float64
 N_integral = 1000
 
 N_x ,  N_y = 100, 50
-N_v = 16
+N_v = 8
 
 N_b = 4
 b_max = np.pi/4
 
 T1 = 1
-T2 = 2.0
+T2 = 1.5
 
 dx = dy = 1
 
@@ -74,10 +74,10 @@ up = down = np.array([T1 for i in range(N_x)], dtype=float_type)
 left = right = np.array([T1 for i in range(N_y)], dtype=float_type)
 down = up.copy()
 down[chip[2]:chip[2]+chip[1]] = T2
-
-experiment_name = f"time={SIM_TIME}_nv={N_v}_nx={N_x}_ny={N_y}_T={T2}_njit_full_goodQ"
-create_shit_dir(experiment_name)
 u = 0.01
+experiment_name = f"time={SIM_TIME}_nv={N_v}_nx={N_x}_ny={N_y}_T={T2}_u={u}_njit_full_goodQ"
+create_shit_dir(experiment_name)
+
 #print("F[0,0]",np.sum(F[0, 0]))
 def start_2d(F, V,dx, dy, dt):
     START_TIME = time()
@@ -108,6 +108,7 @@ def start_2d(F, V,dx, dy, dt):
     render_animation_all(saved_F, dt=1, temp=saved_T, max_f=1/N_x/N_y*1.5*dx*dy, max_t=T2*1.1, filename=experiment_name, chip=chip)
     plot_dQ(saved_dQ, filename=experiment_name)
     plot_last_vH(saved_hV, filename=experiment_name)
+    plot_f(saved_F, filename=experiment_name)
     np.save(f"../plots/{experiment_name}/F.npy", saved_F)
     #np.save(f"../plots/{experiment_name}/T.npy", saved_T)
     np.save(f"../plots/{experiment_name}/hV.npy", saved_hV)
@@ -120,24 +121,3 @@ def start_2d(F, V,dx, dy, dt):
 
 if __name__ == '__main__':
     start_2d(F, V, dx, dy, dt)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

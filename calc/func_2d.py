@@ -222,11 +222,17 @@ def reflect_with_flow_and_chip(left, right, up, down, F, N_x, N_y, Vx, Vy, f_in,
     # right
     for y in range(0, N_y):
         #F[-1, y, :vx_pos, :] *= 0.01
-        exp_dist_x = maxwell_with_flow(Vx, f_in, left[y])
+        # exp_dist_x = maxwell_with_flow(Vx, f_in, left[y])
+        # exp_dist_y = maxwell(Vy, left[y])
+        # exp_dist_x /= exp_dist_x.sum()
+        # exp_dist_y /= exp_dist_y.sum()
+        # F[-1, y, :, :] = rho * np.kron(exp_dist_x, exp_dist_y).reshape(n_vx, n_vy)
+
+        exp_dist_x = maxwell_with_flow(Vx[:vx_pos], f_in, left[y])
         exp_dist_y = maxwell(Vy, left[y])
         exp_dist_x /= exp_dist_x.sum()
         exp_dist_y /= exp_dist_y.sum()
-        F[-1, y, :, :] = rho * np.kron(exp_dist_x, exp_dist_y).reshape(n_vx, n_vy)
+        F[-1, y, :vx_pos, :] = rho * np.kron(exp_dist_x, exp_dist_y).reshape(vx_pos, n_vy)
 
     # left
     for y in range(0, N_y):
@@ -236,7 +242,16 @@ def reflect_with_flow_and_chip(left, right, up, down, F, N_x, N_y, Vx, Vy, f_in,
         exp_dist_x /= exp_dist_x.sum()
         exp_dist_y /= exp_dist_y.sum()
         F[0, y, vx_pos:, :] = rho * np.kron(exp_dist_x, exp_dist_y).reshape(vx_pos, n_vy)
+
+        # exp_dist_x = maxwell_with_flow(Vx, f_in, left[y])
+        # exp_dist_y = maxwell(Vy, left[y])
+        # exp_dist_x /= exp_dist_x.sum()
+        # exp_dist_y /= exp_dist_y.sum()
+        # F[0, y, :, :] = rho * np.kron(exp_dist_x, exp_dist_y).reshape(n_vx, n_vy)
     # print(F[:,:,])
+
+
+
     # chip
 
     # up

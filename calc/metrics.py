@@ -42,17 +42,28 @@ def dQ(F, VV, v_pos):
 
 def dQ_on_chip(F, hydroV, VV, V, chip, u):
     h_chip, w_chip, x_start = chip
-
+    ux = hydroV[0].swapaxes(0,1)
+    uy = hydroV[1].swapaxes(0,1)
     q = 0
     for x in range(x_start-1, x_start+w_chip+1):
-        for i, vy in enumerate(V):
-            q += (F[x, h_chip+1, :, i] * (VV[:, i] - u * u)).sum() * vy / 2
+        for i, vx in enumerate(V):
+            for j, vy in enumerate(V):
+                q += (F[x, h_chip+1, i, j] * (
+                            (vx - ux[x, h_chip+1]) * (vx - ux[x, h_chip+1]) +
+                            (vy - uy[x, h_chip+1]) * (vy - uy[x, h_chip+1]))) * vy / 2
+            # q += (F[x, h_chip+1, :, i] * (VV[:, i] - u * u)).sum() * vy / 2
         # q += (F[x, h_chip+1]*(VV-u*u)).sum()*hydroV[1][h_chip+1, x]/2
 
     for y in range(0, h_chip):
         for i, vx in enumerate(V):
-            q += -(F[x_start - 1, y, i,:] * (VV[i,:] - u * u)).sum() * vx / 2
-            q += (F[x_start+w_chip+1, y, i, :] * (VV[i, :] - u * u)).sum() * vx / 2
+            for j, vy in enumerate(V):
+                q += -(F[x_start - 1, y, i, j] * ((vx - ux[x_start - 1,y])*(vx - ux[x_start - 1,y]) +
+                                                  (vy - uy[x_start - 1,y])*(vy - uy[x_start - 1,y]))) * vx / 2
+                q += (F[x_start+w_chip+1, y, i, j] * ((vx - ux[x_start+w_chip+1, y]) * (vx - ux[x_start+w_chip+1, y]) +
+                                                  (vy - uy[x_start+w_chip+1, y]) * (vy - uy[x_start+w_chip+1, y]))) * vx / 2
+
+                # q += -(F[x_start - 1, y, i,:] * (vx - hydroV - u * u)).sum() * vx / 2
+                # q += (F[x_start+w_chip+1, y, i, :] * (VV[i, :] - u * u)).sum() * vx / 2
         # q += (F[x_start-1, y]*(VV-u*u)).sum()*hydroV[0][y,x_start-1]*(-1)/2
         # q += (F[x_start+w_chip+1, y]*(VV-u*u)).sum()*hydroV[0][y,x_start+w_chip+1]/2
 
@@ -60,5 +71,3 @@ def dQ_on_chip(F, hydroV, VV, V, chip, u):
     print("vH x_start-1, 2", hydroV[0][2,x_start-1], hydroV[1][2,x_start-1])
     print("vH x_start+w_chip+1, 2", hydroV[0][2,x_start+w_chip+1], hydroV[1][2,x_start+w_chip+1])
     return q
-
-
