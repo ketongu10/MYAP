@@ -3,6 +3,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib import animation
 import os
+import re
 
 
 
@@ -140,6 +141,9 @@ def render_hydro_animation(F, dt=1, hydro=None, max_f=1, max_h=1):
     anim = animation.FuncAnimation(fig, animate_hydro, fargs=(F, hydro, dt, ax1, ax2, max_f, max_h), frames=len(F)//dt, repeat=False)
     anim.save("../plots/temp_hydroru.gif", writer="ffmpeg")
 
+
+
+
 def render_animation_all(F, dt=1, temp=None, max_f=1, max_t=1, filename="last", chip=None):
     if temp:
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(ncols=2, nrows=2, figsize=(32, 16))
@@ -154,6 +158,12 @@ def render_animation_all(F, dt=1, temp=None, max_f=1, max_t=1, filename="last", 
         anim.save(f"../plots/{filename}.gif", writer="ffmpeg")
         fig.savefig(f"../plots/{filename}.png")
 
+def plot_last_vH(vH, filename):
+    fig, ax = plt.subplots(figsize=(16, 8))
+    ax.cla()
+    hydro = ax.quiver(vH[-1][1], vH[-1][0], cmap='inferno')
+    fig.savefig(f"../plots/{filename}/vH.png")
+
 
 def plot_dQ(dQs, filename):
     print(dQs)
@@ -166,15 +176,21 @@ if __name__ == "__main__":
     dQs = []
 
 
-    for dir in os.listdir("../plots/for_otchet"):
-        if "nv=4" not in dir:
+    for dir in os.listdir("../plots/NEW_T"):
+        if "T=1.5" in dir:
             print(dir)
-            dQs.append(np.load(os.path.join("../plots/for_otchet", dir, "dQ.npy")))
+            dQs.append(np.load(os.path.join("../plots/NEW_T", dir, "dQ.npy")))
     #dQs[0] -= dQs[1]
     #print(dQs)
-            plt.plot(dQs[-1], label=dir)
-    plt.title("Уносимое тепло")
+            patternT = r"_T=([0-9.]+)"
+            patternu = r"_u=([0-9.]+)"
+            match_T = re.search(patternT, dir)
+            match_u = re.search(patternu, dir)
+            plt.plot(dQs[-1], label=f"T={float(match_T.group(1))}  u={float(match_u.group(1))}")
+    plt.title("Уносимое тепло от скорости потока")
     plt.xlabel("time, steps")
     plt.ylabel("Q")
     plt.legend()
+    plt.savefig("../plots/last.png")
     plt.show()
+

@@ -135,7 +135,7 @@ def CALC_COLL_INT(F, N_integral, buffered_mesh, space_shape, dt, is_test=False, 
 
             for sample in input_samples:
                 r = r_energy_koef[sample]
-                C = 1 * np.linalg.norm(V_input[sample, :2] - V_input[sample, 2:4]) * dtau/actual_N*56*1000
+                C = 1 * np.linalg.norm(V_input[sample, :2] - V_input[sample, 2:4]) * dtau/actual_N*56*10
                 divider = F[x, y, V_fit[sample, 0], V_fit[sample, 1]] * F[x, y, V_fit[sample, 4], V_fit[sample, 5]]
                 if divider == 0:
                     continue
@@ -183,7 +183,7 @@ if __name__ == '__main__':
     print(F)
 
     buffered_mesh = prepare_collision_mesh(N_b, b_max, N_v_base, v_cut, float_type)
-    I = CALC_COLL_INT(F, N_integral, buffered_mesh, (N_x, N_y), dt, is_test=True, use_all_mesh=True)
+    I = CALC_COLL_INT(F, N_integral, buffered_mesh, (N_x, N_y), dt, is_test=False, use_all_mesh=True)
     print(F)
 
 
